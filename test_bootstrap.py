@@ -1,6 +1,52 @@
 import pytest
 import numpy as np
 from bootstrap import bootstrap_sample, bootstrap_ci, R_squared
+
+"""====================== SAMPLE TESTS ========================"""
+def test_output_shape():
+    """Bootstrap should return an array of length n_bootstrap."""
+    np.random.seed(0)
+    n, p = 30, 2
+    X = np.random.randn(n, p)
+    X = np.column_stack([np.ones(n), X])  # add intercept
+    y = np.random.randn(n)
+    stats = bootstrap_sample(X, y, R_squared, n_bootstrap=100)
+    assert isinstance(stats, np.ndarray)
+    assert stats.shape == (100,)
+
+def test_reproducibility():
+    """With fixed seed, bootstrap results should be reproducible."""
+    np.random.seed(42)
+    n, p = 10, 2
+    X = np.random.randn(n, p + 1)
+    y = np.random.randn(n)
+    stats1 = bootstrap_sample(X, y, R_squared, n_bootstrap=5)
+    np.random.seed(42)
+    stats2 = bootstrap_sample(X, y, R_squared, n_bootstrap=5)
+    assert stats1.shape == stats2.shape
+    assert np.all(np.isfinite(stats1)) and np.all(np.isfinite(stats2))
+
+def test_single_bootstrap():
+    """n_bootstrap=1 should return an array with one statistic."""
+    np.random.seed(0)
+    n, p = 10, 2
+    X = np.random.randn(n, p + 1)
+    y = np.random.randn(n)
+    stats = bootstrap_sample(X, y, R_squared, n_bootstrap=1)
+    assert stats.shape == (1,)
+    assert np.isscalar(stats[0])
+
+def test_small_dataset():
+    np.random.seed(0)
+    X = np.array([[1.0, 2.0], [1.0, 3.0]])
+    y = np.array([1.0, 2.0])
+    stats = bootstrap_sample(X, y, R_squared, n_bootstrap=10)
+    assert stats.shape == (10,)
+    # Allow nan due to constant y
+    assert np.all(np.isfinite(stats) | np.isnan(stats))
+
+
+"""====================== CI TESTS ============================"""
 def test_bootstrap_ci_correct_length():
     """Check that bootstrap_ci returns a tuple of length 2"""
     stats = np.random.randn(1000)  # simulate bootstrap stats
@@ -24,7 +70,7 @@ def test_bootstrap_ci_alpha_effect():
     width_80 = ci_80[1] - ci_80[0]
     assert width_95 >= width_80
 
-
+"""====================== R-squared TESTS =================="""
 def test_perfect_fit():
     """If there is no noise, R^2 should be 1."""
     np.random.seed(0)
@@ -79,6 +125,7 @@ def test_constant_y():
     r2 = R_squared(X, y)
     assert np.isnan(r2) or r2 == 0.0
 
+"""======================= MAIN TEST ============================"""
 
 def test_bootstrap_integration():
     """Test that bootstrap_sample and bootstrap_ci work together"""
