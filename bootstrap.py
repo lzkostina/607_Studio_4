@@ -99,4 +99,7 @@ def R_squared(X, y):
     rss = np.sum((y - y_hat) ** 2)
     tss = np.sum((y - np.mean(y)) ** 2)
 
+    if tss == 0:   # y is constant
+        return np.nan
+
     return 1 - rss / tss
