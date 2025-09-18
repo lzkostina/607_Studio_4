@@ -28,10 +28,34 @@ def bootstrap_sample(X, y, compute_stat, n_bootstrap=1000):
     numpy.ndarray
         Array of bootstrap statistics, length n_bootstrap
 
-    ....
+    Raises
+    ------
+    TypeError
+        If X is not numeric
+        If y is not numeric
+        If compute_stat is not a callable
+    ValueError
+        If n_bootstrap is not a positive integer
+        If X.shape[0] != len(y)
+
     """
+    if not callable(compute_stat):
+        raise TypeError("compute_stat must be callable")
+
+    if not isinstance(n_bootstrap, int) or n_bootstrap <= 0:
+        raise ValueError("n_bootstrap must be a positive integer")
+
     X = np.asarray(X)
+    if not np.issubdtype(X.dtype, np.number):
+        raise TypeError("X must be numeric!")
+
     y = np.asarray(y)
+    if not np.issubdtype(y.dtype, np.number):
+        raise TypeError("y must be numeric!")
+
+    if X.shape[0] != len(y):
+        raise ValueError("Number of rows in X must match length of y!")
+
     n = len(y)
 
     stats = np.empty(n_bootstrap)
@@ -56,8 +80,17 @@ def bootstrap_ci(bootstrap_stats, alpha=0.05):
     tuple 
         (lower_bound, upper_bound) of the CI
     
-    ....
+    Raises
+    ------
+    ValueError
+        If bootstrap_stats is empty
+        If alpha is out of [0,1] range
     """
+    if len(bootstrap_stats) == 0:
+        raise ValueError("bootstrap_stats must not be empty")
+    if not (0 < alpha < 1):
+        raise ValueError("alpha must be between 0 and 1")
+
     bootstrap_stats = np.asarray(bootstrap_stats)
 
     lower = np.percentile(bootstrap_stats, 100 * alpha / 2)
@@ -84,12 +117,20 @@ def R_squared(X, y):
     ------
     ValueError
         If X.shape[0] != len(y)
+    TypeError
+        If X is not numeric
+        If y is not numeric
     """
     X = np.asarray(X)
+    if not np.issubdtype(X.dtype, np.number):
+        raise TypeError("X must be numeric!")
+
     y = np.asarray(y)
+    if not np.issubdtype(y.dtype, np.number):
+        raise TypeError("y must be numeric!")
 
     if X.shape[0] != len(y):
-        raise ValueError("Number of rows in X must match length of y")
+        raise ValueError("Number of rows in X must match length of y!")
 
     # OLS estimate beta = (X^T X)^(-1) X^T y
     beta_hat, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
