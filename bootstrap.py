@@ -1,4 +1,4 @@
-
+import numpy as np
 """
 Strong linear model in regression
     Y = X beta + eps, where eps~ N(0, sigma^2 I)
@@ -58,7 +58,12 @@ def bootstrap_ci(bootstrap_stats, alpha=0.05):
     
     ....
     """
-    pass
+    bootstrap_stats = np.asarray(bootstrap_stats)
+
+    lower = np.percentile(bootstrap_stats, 100 * alpha / 2)
+    upper = np.percentile(bootstrap_stats, 100 * (1 - alpha / 2))
+
+    return lower, upper
 
 def R_squared(X, y):
     """
