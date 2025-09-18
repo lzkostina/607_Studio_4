@@ -3,8 +3,21 @@ import numpy as np
 from bootstrap import bootstrap_sample, bootstrap_ci, R_squared
 
 """====================== SAMPLE TESTS ========================"""
+def test_invalid_n_bootstrap():
+    """
+    Check that an error is raised when an invalid number of bootstrap samples is passed.
+    Invalid inputs test
+    """
+    X = np.ones((5, 2))
+    y = np.ones(5)
+    with pytest.raises(ValueError):
+        bootstrap_sample(X, y, R_squared, n_bootstrap=0)
+
 def test_output_shape():
-    """Bootstrap should return an array of length n_bootstrap."""
+    """
+    Bootstrap should return an array of length n_bootstrap.
+    Happy path test
+    """
     np.random.seed(0)
     n, p = 30, 2
     X = np.random.randn(n, p)
@@ -15,7 +28,10 @@ def test_output_shape():
     assert stats.shape == (100,)
 
 def test_reproducibility():
-    """With fixed seed, bootstrap results should be reproducible."""
+    """
+    With fixed seed, bootstrap results should be reproducible.
+    Happy path test
+    """
     np.random.seed(42)
     n, p = 10, 2
     X = np.random.randn(n, p + 1)
@@ -27,7 +43,10 @@ def test_reproducibility():
     assert np.all(np.isfinite(stats1)) and np.all(np.isfinite(stats2))
 
 def test_single_bootstrap():
-    """n_bootstrap=1 should return an array with one statistic."""
+    """
+    n_bootstrap=1 should return an array with one statistic.
+    Edge cases test
+    """
     np.random.seed(0)
     n, p = 10, 2
     X = np.random.randn(n, p + 1)
@@ -37,6 +56,10 @@ def test_single_bootstrap():
     assert np.isscalar(stats[0])
 
 def test_small_dataset():
+    """
+    Check with a small dataset.
+    Edge cases test
+    """
     np.random.seed(0)
     X = np.array([[1.0, 2.0], [1.0, 3.0]])
     y = np.array([1.0, 2.0])
@@ -47,22 +70,42 @@ def test_small_dataset():
 
 
 """====================== CI TESTS ============================"""
+def test_invalid_alpha():
+    """
+    Check with an invalid alpha.
+    Invalid inputs test
+    """
+    stats = np.random.randn(10)
+    with pytest.raises(ValueError):
+        bootstrap_ci(stats, alpha=0)
+    with pytest.raises(ValueError):
+        bootstrap_ci(stats, alpha=1)
+
 def test_bootstrap_ci_correct_length():
-    """Check that bootstrap_ci returns a tuple of length 2"""
+    """
+    Check that bootstrap_ci returns a tuple of length 2.
+    Happy path test
+    """
     stats = np.random.randn(1000)  # simulate bootstrap stats
     ci = bootstrap_ci(stats, alpha=0.05)
     assert isinstance(ci, tuple)
     assert len(ci) == 2
 
 def test_bootstrap_ci_bounds():
-    """Check that lower bound <= upper bound"""
+    """
+    Check that lower bound <= upper bound.
+    Happy path test
+    """
     stats = np.random.randn(1000)
     lower, upper = bootstrap_ci(stats, alpha=0.05)
 
     assert lower <= upper
 
 def test_bootstrap_ci_alpha_effect():
-    """Smaller alpha should give a wider interval"""
+    """
+    Smaller alpha should give a wider interval.
+    Happy path test
+    """
     stats = np.random.randn(1000)
     ci_95 = bootstrap_ci(stats, alpha=0.05)   # 95% CI
     ci_80 = bootstrap_ci(stats, alpha=0.20)   # 80% CI
@@ -84,7 +127,10 @@ def test_perfect_fit():
 
 
 def test_r2_with_noise_in_range():
-    """R^2 should be between 0 and 1 for noisy regression."""
+    """
+    R^2 should be between 0 and 1 for noisy regression.
+    Happy path test
+    """
     np.random.seed(0)
     n, p = 50, 2
     X = np.random.randn(n, p)
@@ -95,7 +141,10 @@ def test_r2_with_noise_in_range():
     assert 0 <= r2 <= 1
 
 def test_mismatched_dimensions():
-    """Should raise ValueError if dimensions do not match."""
+    """
+    Should raise ValueError if dimensions do not match.
+    Invalid inputs
+    """
     np.random.seed(0)
     n, p = 50, 2
     X = np.random.randn(n, p + 1)
@@ -108,7 +157,10 @@ def test_mismatched_dimensions():
         assert False, "Expected ValueError for mismatched dimensions"
 
 def test_pure_noise_data():
-    """With random X and y, R^2 should be close to 0."""
+    """
+    With random X and y, R^2 should be close to 0.
+    Edge cases test
+    """
     np.random.seed(0)
     n, p = 50, 2
     X = np.random.randn(n, p + 1)
@@ -117,7 +169,10 @@ def test_pure_noise_data():
     assert r2 < 0.2
 
 def test_constant_y():
-    """If y is constant, R^2 should be nan or 0."""
+    """
+    If y is constant, R^2 should be nan or 0.
+    Edge cases test
+    """
     np.random.seed(0)
     n, p = 50, 2
     X = np.random.randn(n, p + 1)
@@ -128,7 +183,10 @@ def test_constant_y():
 """======================= MAIN TEST ============================"""
 
 def test_bootstrap_integration():
-    """Test that bootstrap_sample and bootstrap_ci work together"""
+    """
+    Test that bootstrap_sample and bootstrap_ci work together.
+    Statistical validation test
+    """
     np.random.seed(0)
     X = np.column_stack([np.ones(50), np.random.randn(50)])
     beta = np.array([1, 0.5])
