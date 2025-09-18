@@ -30,7 +30,15 @@ def bootstrap_sample(X, y, compute_stat, n_bootstrap=1000):
 
     ....
     """
-    pass
+    X = np.asarray(X)
+    y = np.asarray(y)
+    n = len(y)
+
+    stats = np.empty(n_bootstrap)
+    for b in range(n_bootstrap):
+        idx = np.random.choice(n, size=n, replace=True)
+        stats[b] = compute_stat(X[idx], y[idx])
+    return stats
 
 def bootstrap_ci(bootstrap_stats, alpha=0.05):
     """
@@ -72,4 +80,18 @@ def R_squared(X, y):
     ValueError
         If X.shape[0] != len(y)
     """
-    pass
+    X = np.asarray(X)
+    y = np.asarray(y)
+
+    if X.shape[0] != len(y):
+        raise ValueError("Number of rows in X must match length of y")
+
+    # OLS estimate beta = (X^T X)^(-1) X^T y
+    beta_hat, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+    y_hat = X @ beta_hat
+
+    # residual sum of squares and total sum of squares
+    rss = np.sum((y - y_hat) ** 2)
+    tss = np.sum((y - np.mean(y)) ** 2)
+
+    return 1 - rss / tss
