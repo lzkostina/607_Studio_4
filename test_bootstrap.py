@@ -18,7 +18,7 @@ def test_output_shape():
     Bootstrap should return an array of length n_bootstrap.
     Happy path test
     """
-    np.random.seed(0)
+    np.random.seed(123)
     n, p = 30, 2
     X = np.random.randn(n, p)
     X = np.column_stack([np.ones(n), X])  # add intercept
@@ -32,12 +32,12 @@ def test_reproducibility():
     With fixed seed, bootstrap results should be reproducible.
     Happy path test
     """
-    np.random.seed(42)
+    np.random.seed(123)
     n, p = 10, 2
     X = np.random.randn(n, p + 1)
     y = np.random.randn(n)
     stats1 = bootstrap_sample(X, y, R_squared, n_bootstrap=5)
-    np.random.seed(42)
+    np.random.seed(123)
     stats2 = bootstrap_sample(X, y, R_squared, n_bootstrap=5)
     assert stats1.shape == stats2.shape
     assert np.all(np.isfinite(stats1)) and np.all(np.isfinite(stats2))
@@ -47,7 +47,7 @@ def test_single_bootstrap():
     n_bootstrap=1 should return an array with one statistic.
     Edge cases test
     """
-    np.random.seed(0)
+    np.random.seed(123)
     n, p = 10, 2
     X = np.random.randn(n, p + 1)
     y = np.random.randn(n)
@@ -60,7 +60,7 @@ def test_small_dataset():
     Check with a small dataset.
     Edge cases test
     """
-    np.random.seed(0)
+    np.random.seed(123)
     X = np.array([[1.0, 2.0], [1.0, 3.0]])
     y = np.array([1.0, 2.0])
     stats = bootstrap_sample(X, y, R_squared, n_bootstrap=10)
@@ -75,7 +75,7 @@ def test_invalid_alpha():
     Check with an invalid alpha.
     Invalid inputs test
     """
-    stats = np.random.randn(10)
+    stats = np.random.randn(123)
     with pytest.raises(ValueError):
         bootstrap_ci(stats, alpha=0)
     with pytest.raises(ValueError):
@@ -116,7 +116,7 @@ def test_bootstrap_ci_alpha_effect():
 """====================== R-squared TESTS =================="""
 def test_perfect_fit():
     """If there is no noise, R^2 should be 1."""
-    np.random.seed(0)
+    np.random.seed(123)
     n, p = 50, 2
     X = np.random.randn(n, p)
     X = np.column_stack([np.ones(n), X])  # add intercept
@@ -131,7 +131,7 @@ def test_r2_with_noise_in_range():
     R^2 should be between 0 and 1 for noisy regression.
     Happy path test
     """
-    np.random.seed(0)
+    np.random.seed(123)
     n, p = 50, 2
     X = np.random.randn(n, p)
     X = np.column_stack([np.ones(n), X])
@@ -145,7 +145,7 @@ def test_mismatched_dimensions():
     Should raise ValueError if dimensions do not match.
     Invalid inputs
     """
-    np.random.seed(0)
+    np.random.seed(123)
     n, p = 50, 2
     X = np.random.randn(n, p + 1)
     y = np.random.randn(n + 1)
@@ -161,7 +161,7 @@ def test_pure_noise_data():
     With random X and y, R^2 should be close to 0.
     Edge cases test
     """
-    np.random.seed(0)
+    np.random.seed(123)
     n, p = 50, 2
     X = np.random.randn(n, p + 1)
     y = np.random.randn(n)
@@ -173,7 +173,7 @@ def test_constant_y():
     If y is constant, R^2 should be nan or 0.
     Edge cases test
     """
-    np.random.seed(0)
+    np.random.seed(123)
     n, p = 50, 2
     X = np.random.randn(n, p + 1)
     y = np.ones(n)
@@ -187,7 +187,7 @@ def test_bootstrap_integration():
     Test that bootstrap_sample and bootstrap_ci work together.
     Statistical validation test
     """
-    np.random.seed(0)
+    np.random.seed(123)
     X = np.column_stack([np.ones(50), np.random.randn(50)])
     beta = np.array([1, 0.5])
     y = X @ beta + np.random.randn(50)
@@ -201,3 +201,28 @@ def test_bootstrap_integration():
     assert isinstance(ci, tuple) and len(ci) == 2
     # Very weak test: R^2 is usually positive
     assert ci[1] >= 0
+
+
+"""===================== STATISTICAL VALIDATION ====================="""
+def test_under_null():
+    """
+    Check bootstrap mean of R^2 is close to theoretical Beta mean under H0.
+    Statistical validation test
+    """
+    np.random.seed(123)
+    n, p = 100, 3
+    # simulate data under the null hypothesis
+    X = np.random.randn(n, p)
+    X = np.column_stack([np.ones(n), X])
+    y = np.random.randn(n)
+
+    # bootstrap distribution of R^2
+    boot_stats = bootstrap_sample(X, y, R_squared, n_bootstrap=1000)
+
+    empirical_mean = np.nanmean(boot_stats)
+    theoretical_mean = p / (n - 1)
+
+    # compare empirical and theoretical mean with absolute tolerance
+    assert np.isclose(empirical_mean, theoretical_mean, atol=0.02)
+
+
